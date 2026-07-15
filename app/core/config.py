@@ -22,7 +22,6 @@ class Settings(BaseSettings):
     # CORS
     BACKEND_CORS_ORIGINS: Annotated[
         List[str], BeforeValidator(parse_cors)
-    ] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:5174",
@@ -32,7 +31,12 @@ class Settings(BaseSettings):
         "https://sitam-coding-club-fb39a.firebaseapp.com",
         "https://sitamcodexa.org",
         "https://www.sitamcodexa.org",
+        "https://codexa-frontend-git-main-sitam-codexa.vercel.app",
+        "https://codexa-frontend.vercel.app",
+        "https://codexa-coding-club.vercel.app",
+        "https://codexa-frontend-coral.vercel.app/",
     ]
+
 
 
     # Firebase Settings
