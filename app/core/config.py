@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     # Firebase Settings
     FIREBASE_PROJECT_ID: str = "sitam-coding-club-fb39a"
     FIREBASE_CREDENTIALS_PATH: Optional[str] = "firebase-credentials.json"
+    FIREBASE_STORAGE_BUCKET: Optional[str] = None
+
 
     # SMTP Email
     SMTP_HOST: str = "smtp.gmail.com"

@@ -14,6 +14,9 @@ def init_db_sync() -> None:
     try:
         firebase_admin.get_app()
     except ValueError:
+        bucket_name = settings.FIREBASE_STORAGE_BUCKET or os.environ.get("FIREBASE_STORAGE_BUCKET") or f"{settings.FIREBASE_PROJECT_ID}.appspot.com"
+        options = {"storageBucket": bucket_name}
+        
         # Check if credentials JSON is provided as environment variable
         import json
         cred_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
@@ -21,10 +24,10 @@ def init_db_sync() -> None:
             try:
                 cred_info = json.loads(cred_json)
                 cred = credentials.Certificate(cred_info)
-                firebase_admin.initialize_app(cred)
+                firebase_admin.initialize_app(cred, options)
             except Exception as e:
                 print(f"ERROR: Failed to initialize Firebase using FIREBASE_CREDENTIALS_JSON: {e}")
-                firebase_admin.initialize_app()
+                firebase_admin.initialize_app(options=options)
         else:
             # Fall back to credentials file path
             cred_path = settings.FIREBASE_CREDENTIALS_PATH
@@ -38,13 +41,14 @@ def init_db_sync() -> None:
                 
                 if os.path.exists(cred_path):
                     cred = credentials.Certificate(cred_path)
-                    firebase_admin.initialize_app(cred)
+                    firebase_admin.initialize_app(cred, options)
                 else:
-                    firebase_admin.initialize_app()
+                    firebase_admin.initialize_app(options=options)
             else:
-                firebase_admin.initialize_app()
+                firebase_admin.initialize_app(options=options)
             
     db = firestore.client()
+
     print("INFO:    Firebase Firestore client initialized successfully!")
 
 

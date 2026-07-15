@@ -33,21 +33,31 @@ async def upload_file(
     
     # Generate unique filename
     unique_filename = f"{uuid.uuid4()}{file_ext}"
-    file_path = os.path.join(UPLOAD_DIR, unique_filename)
     
-    # Save the file
+    # Save the file to Firebase Storage
     try:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        from firebase_admin import storage
+        bucket = storage.bucket()
+        blob = bucket.blob(f"uploads/{unique_filename}")
+        file.file.seek(0)
+        blob.upload_from_file(file.file, content_type=file.content_type)
+        
+        try:
+            blob.make_public()
+            public_url = blob.public_url
+        except Exception:
+            # Fallback to standard Firebase Storage HTTP URL
+            public_url = f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}/o/uploads%2F{unique_filename}?alt=media"
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Could not save file: {str(e)}"
+            detail=f"Could not upload file to storage: {str(e)}"
         )
         
-    # Return relative URL
+    # Return Firebase Storage URL
     return {
-        "url": f"/uploads/{unique_filename}",
+        "url": public_url,
         "filename": unique_filename,
         "type": "video" if file_ext in ALLOWED_VIDEO_EXTENSIONS else "image"
     }
+
