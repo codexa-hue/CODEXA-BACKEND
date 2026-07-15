@@ -66,10 +66,10 @@ def _send(
             server.starttls(context=context)
             server.ehlo(sender_domain)        # second ehlo after STARTTLS
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            server.sendmail(from_addr, to_email, msg.as_string())
-        print(f"[EMAIL] Delivered '{subject}' → {to_email}")
+        print(f"[EMAIL] Delivered '{subject}' -> {to_email}")
     except Exception as exc:
-        print(f"[EMAIL] Failed to deliver '{subject}' → {to_email}: {exc}")
+        print(f"[EMAIL] Failed to deliver '{subject}' -> {to_email}: {exc}")
+
 
 
 # ── HTML template ─────────────────────────────────────────────────
