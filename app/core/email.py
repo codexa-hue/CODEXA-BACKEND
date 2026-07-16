@@ -66,6 +66,7 @@ def _send(
             server.starttls(context=context)
             server.ehlo(sender_domain)        # second ehlo after STARTTLS
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.send_message(msg)
         print(f"[EMAIL] Delivered '{subject}' -> {to_email}")
     except Exception as exc:
         print(f"[EMAIL] Failed to deliver '{subject}' -> {to_email}: {exc}")
@@ -284,55 +285,6 @@ def send_application_rejected(to_email: str, name: str) -> None:
         text_body=plain,
     )
 
-
-def send_password_reset_otp(
-    to_email: str, name: str, otp: str, frontend_url: str
-) -> None:
-    """OTP email for password reset. Expires in 15 minutes."""
-    reset_url = f"{frontend_url}/reset-password"
-
-    html_content = f"""\
-<h2 style="color:#111827;font-size:18px;margin:0 0 12px;font-family:Arial,sans-serif;">
-  Password Reset Request
-</h2>
-<p style="color:#374151;font-size:14px;line-height:1.7;margin:0 0 16px;">
-  Hi {name}, we received a request to reset the password for your CODEXA account.
-  Use the one-time code below. It is valid for <strong>15 minutes</strong>.
-</p>
-<div style="background:#f5f3ff;border:2px solid #4f46e5;border-radius:12px;
-            padding:24px;text-align:center;margin:24px 0;">
-  <p style="margin:0 0 6px;color:#6b7280;font-size:11px;
-            text-transform:uppercase;letter-spacing:2px;">
-    Your one-time password (OTP)
-  </p>
-  <p style="margin:0;color:#4f46e5;font-size:36px;font-weight:700;
-            letter-spacing:10px;font-family:'Courier New',monospace;">
-    {otp}
-  </p>
-</div>
-{_btn("Go to Reset Password Page", reset_url)}
-{_divider()}
-<p style="color:#6b7280;font-size:12px;margin:0;">
-  If you did not request a password reset, please ignore this email.
-  Your account remains secure.
-</p>"""
-
-    plain = (
-        f"Hi {name},\n\n"
-        f"Your CODEXA account password reset code is:\n\n"
-        f"  {otp}\n\n"
-        f"This code expires in 15 minutes.\n"
-        f"Enter it at: {reset_url}\n\n"
-        f"If you did not request this, ignore this email.\n\n"
-        f"CODEXA Coding Club"
-    )
-
-    _send(
-        to_email=to_email,
-        subject="CODEXA - Password Reset Code",
-        html_body=_base(html_content),
-        text_body=plain,
-    )
 
 
 def send_event_registration_confirmation(
@@ -578,14 +530,14 @@ def send_password_reset_otp(
 <div style="background:#f5f3ff;border:1px solid #c7d2fe;border-radius:12px;
             padding:28px;margin:24px 0;text-align:center;">
   <p style="margin:0 0 8px;color:#4f46e5;font-size:12px;font-weight:700;
-             letter-spacing:0.1em;text-transform:uppercase;">
+             letter-spacing:1px;text-transform:uppercase;font-family:Arial,sans-serif;">
     Your OTP Code
   </p>
-  <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#1e1b4b;
-               font-family:monospace;margin:8px 0;">
+  <p style="margin:8px 0;font-size:36px;font-weight:bold;color:#4f46e5;
+             font-family:'Courier New',Courier,monospace;letter-spacing:8px;">
     {otp}
-  </div>
-  <p style="margin:12px 0 0;color:#6b7280;font-size:12px;">
+  </p>
+  <p style="margin:12px 0 0;color:#6b7280;font-size:12px;font-family:Arial,sans-serif;">
     Expires in 15 minutes
   </p>
 </div>
