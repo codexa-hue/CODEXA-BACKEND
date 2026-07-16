@@ -61,12 +61,18 @@ def _send(
 
     try:
         context = ssl.create_default_context()
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=20) as server:
-            server.ehlo(sender_domain)
-            server.starttls(context=context)
-            server.ehlo(sender_domain)        # second ehlo after STARTTLS
-            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            server.send_message(msg)
+        if settings.SMTP_PORT == 465:
+            with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=20, context=context) as server:
+                server.ehlo(sender_domain)
+                server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=20) as server:
+                server.ehlo(sender_domain)
+                server.starttls(context=context)
+                server.ehlo(sender_domain)        # second ehlo after STARTTLS
+                server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                server.send_message(msg)
         print(f"[EMAIL] Delivered '{subject}' -> {to_email}")
     except Exception as exc:
         print(f"[EMAIL] Failed to deliver '{subject}' -> {to_email}: {exc}")
