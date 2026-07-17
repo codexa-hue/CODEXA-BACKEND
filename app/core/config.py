@@ -69,3 +69,12 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Safe startup check to debug Render loading
+if settings.RESEND_API_KEY:
+    val = settings.RESEND_API_KEY.strip().strip("'").strip('"')
+    masked = val[:4] + "..." + val[-4:] if len(val) > 8 else "too_short"
+    print(f"[STARTUP] Loaded RESEND_API_KEY: {masked} (length: {len(val)})")
+else:
+    print("[STARTUP] RESEND_API_KEY is NOT loaded on the server!")
+
