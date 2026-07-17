@@ -33,8 +33,10 @@ def _send_resend(to_email: str, subject: str, html_body: str, text_body: str) ->
     url = "https://api.resend.com/emails"
     headers = {
         "Authorization": f"Bearer {settings.RESEND_API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
+
     from_name = settings.SMTP_FROM_NAME or "CODEXA Coding Club"
     payload = {
         "from": f"{from_name} <onboarding@resend.dev>",
