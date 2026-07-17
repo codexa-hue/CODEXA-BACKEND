@@ -41,13 +41,15 @@ def _send_resend(to_email: str, subject: str, html_body: str, text_body: str) ->
 
 
     from_name = settings.SMTP_FROM_NAME or "CODEXA Coding Club"
+    # Send from the verified custom domain instead of the restricted sandbox domain
     payload = {
-        "from": f"{from_name} <onboarding@resend.dev>",
+        "from": f"{from_name} <noreply@sitamcodexa.org>",
         "to": [to_email],
         "subject": subject,
         "html": html_body,
         "text": text_body
     }
+
     
     req = urllib.request.Request(
         url,
