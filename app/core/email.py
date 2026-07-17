@@ -22,10 +22,39 @@ from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 from typing import Optional
 
+import urllib.request
+import urllib.error
+import json
 from app.core.config import settings
 
 
-# ── Core sender ───────────────────────────────────────────────────
+
+def _send_resend(to_email: str, subject: str, html_body: str, text_body: str) -> None:
+    url = "https://api.resend.com/emails"
+    headers = {
+        "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    from_name = settings.SMTP_FROM_NAME or "CODEXA Coding Club"
+    payload = {
+        "from": f"{from_name} <onboarding@resend.dev>",
+        "to": [to_email],
+        "subject": subject,
+        "html": html_body,
+        "text": text_body
+    }
+    
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST"
+    )
+    
+    with urllib.request.urlopen(req, timeout=15) as response:
+        res_body = response.read().decode("utf-8")
+        print(f"[RESEND] Successfully sent email to {to_email}: {res_body}")
+
 
 def _send(
     to_email: str,
@@ -34,9 +63,17 @@ def _send(
     text_body: str,
 ) -> None:
     """
-    Send a multipart/alternative email with proper anti-spam headers.
-    Errors are logged but never raised — mail failure must not crash the API.
+    Send email. Uses Resend API if settings.RESEND_API_KEY is configured.
+    Otherwise falls back to standard SMTP.
     """
+    if settings.RESEND_API_KEY:
+        try:
+            _send_resend(to_email, subject, html_body, text_body)
+            print(f"[EMAIL] Delivered via Resend API '{subject}' -> {to_email}")
+            return
+        except Exception as exc:
+            print(f"[EMAIL] Resend delivery failed: {exc}. Falling back to SMTP...")
+
     if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
         print(f"[EMAIL] SMTP not configured — skipping '{subject}' to {to_email}")
         return
@@ -44,6 +81,7 @@ def _send(
     from_addr   = settings.SMTP_FROM_EMAIL
     from_name   = settings.SMTP_FROM_NAME
     sender_domain = from_addr.split("@")[-1] if "@" in from_addr else "mail.local"
+
 
     msg = MIMEMultipart("alternative")
 

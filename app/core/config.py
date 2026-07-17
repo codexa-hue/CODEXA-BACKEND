@@ -21,25 +21,25 @@ class Settings(BaseSettings):
 
 
 
-# CORS
+    # CORS
     BACKEND_CORS_ORIGINS: Annotated[
-    List[str],
-    BeforeValidator(parse_cors),
-] = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "http://localhost:3000",
-    "https://sitam-coding-club-fb39a.web.app",
-    "https://sitam-coding-club-fb39a.firebaseapp.com",
-    "https://sitamcodexa.org",
-    "https://www.sitamcodexa.org",
-    "https://codexa-frontend-git-main-sitam-codexa.vercel.app",
-    "https://codexa-frontend.vercel.app",
-    "https://codexa-coding-club.vercel.app",
-    "https://codexa-frontend-coral.vercel.app/",
-]
+        List[str], BeforeValidator(parse_cors)
+    ] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "http://localhost:3000",
+        "https://sitam-coding-club-fb39a.web.app",
+        "https://sitam-coding-club-fb39a.firebaseapp.com",
+        "https://sitamcodexa.org",
+        "https://www.sitamcodexa.org",
+        "https://codexa-frontend-git-main-sitam-codexa.vercel.app",
+        "https://codexa-frontend.vercel.app",
+        "https://codexa-coding-club.vercel.app",
+        "https://codexa-frontend-coral.vercel.app",
+    ]
+
 
 
     # Firebase Settings
@@ -55,6 +55,8 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_NAME: str = "CODEXA Coding Club"
     SMTP_FROM_EMAIL: str = ""
+    RESEND_API_KEY: Optional[str] = None
+
 
     # Frontend base URL (used in password-reset links)
     FRONTEND_URL: str = "https://sitamcodexa.org"
