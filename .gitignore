@@ -18,3 +18,7 @@ firebase-credentials.json
 # Uploads directory
 uploads/*
 !uploads/.gitkeep
+
+# Temporary scratch scripts
+scratch/
+
