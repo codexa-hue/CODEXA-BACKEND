@@ -31,11 +31,14 @@ from app.core.config import settings
 
 def _send_resend(to_email: str, subject: str, html_body: str, text_body: str) -> None:
     url = "https://api.resend.com/emails"
+    # Strip any leading/trailing spaces, newlines, or quotes from copy-paste mistakes
+    api_key = (settings.RESEND_API_KEY or "").strip().strip("'").strip('"')
     headers = {
-        "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
+
 
     from_name = settings.SMTP_FROM_NAME or "CODEXA Coding Club"
     payload = {
