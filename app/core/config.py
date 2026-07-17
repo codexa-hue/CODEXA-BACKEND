@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = "CODEXA Coding Club"
     SMTP_FROM_EMAIL: str = ""
     RESEND_API_KEY: Optional[str] = None
+    BREVO_API_KEY: Optional[str] = None
+
 
 
     # Frontend base URL (used in password-reset links)

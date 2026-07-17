@@ -63,6 +63,37 @@ def _send_resend(to_email: str, subject: str, html_body: str, text_body: str) ->
         print(f"[RESEND] Successfully sent email to {to_email}: {res_body}")
 
 
+def _send_brevo(to_email: str, subject: str, html_body: str, text_body: str) -> None:
+    url = "https://api.brevo.com/v3/smtp/email"
+    # Clean up API key from spaces or quotes
+    api_key = (settings.BREVO_API_KEY or "").strip().strip("'").strip('"')
+    headers = {
+        "api-key": api_key,
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    from_name = settings.SMTP_FROM_NAME or "CODEXA Coding Club"
+    payload = {
+        "sender": {"name": from_name, "email": "noreply@sitamcodexa.org"},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "htmlContent": html_body,
+        "textContent": text_body
+    }
+    
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST"
+    )
+    
+    with urllib.request.urlopen(req, timeout=15) as response:
+        res_body = response.read().decode("utf-8")
+        print(f"[BREVO] Successfully sent email to {to_email}: {res_body}")
+
+
 def _send(
     to_email: str,
     subject: str,
@@ -70,9 +101,18 @@ def _send(
     text_body: str,
 ) -> None:
     """
-    Send email. Uses Resend API if settings.RESEND_API_KEY is configured.
+    Send email. Uses Brevo API if settings.BREVO_API_KEY is configured.
+    Otherwise uses Resend API if settings.RESEND_API_KEY is configured.
     Otherwise falls back to standard SMTP.
     """
+    if settings.BREVO_API_KEY:
+        try:
+            _send_brevo(to_email, subject, html_body, text_body)
+            print(f"[EMAIL] Delivered via Brevo API '{subject}' -> {to_email}")
+            return
+        except Exception as exc:
+            print(f"[EMAIL] Brevo delivery failed: {exc}. Falling back to Resend...")
+
     if settings.RESEND_API_KEY:
         try:
             _send_resend(to_email, subject, html_body, text_body)
@@ -80,6 +120,7 @@ def _send(
             return
         except Exception as exc:
             print(f"[EMAIL] Resend delivery failed: {exc}. Falling back to SMTP...")
+
 
     if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
         print(f"[EMAIL] SMTP not configured — skipping '{subject}' to {to_email}")
