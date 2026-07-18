@@ -188,11 +188,12 @@ async def update_request_status(
 
     if status_in.status == RequestStatus.APPROVED:
         member_count = len(db.collection("members").get())
-        if member_count >= 15:
+        if member_count >= 250:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Approval limit reached: The club is capped at a maximum of 15 members."
+                detail="Approval limit reached: The club is capped at a maximum of 250 members."
             )
+
 
     request.status = status_in.status
     db.collection("join_requests").document(request.id).set(request.model_dump(exclude={"id"}))
@@ -270,18 +271,18 @@ async def approve_all_pending(
 ):
     """
     Approve every pending membership application in one shot,
-    up to the club cap of 15 members.
+    up to the club cap of 250 members.
     """
     db = get_db()
 
     # Current member count
     current_member_count = len(db.collection("members").get())
-    available_slots = 15 - current_member_count
+    available_slots = 250 - current_member_count
 
     if available_slots <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Approval limit reached: The club is capped at a maximum of 15 members.",
+            detail="Approval limit reached: The club is capped at a maximum of 250 members.",
         )
 
     # All pending requests
