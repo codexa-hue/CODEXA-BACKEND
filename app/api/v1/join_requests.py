@@ -366,3 +366,30 @@ async def approve_all_pending(
         skipped_count=skipped_count,
         message=message,
     )
+
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_join_request(id: str, current_user: User = Depends(get_current_admin)):
+    db = get_db()
+    doc = db.collection("join_requests").document(id).get()
+    if not doc.exists:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
+        
+    request = JoinRequest(id=doc.id, **doc.to_dict())
+    
+    # 1. Delete from join_requests collection
+    db.collection("join_requests").document(request.id).delete()
+    
+    # 2. Find and delete corresponding user & member by email
+    if request.email:
+        # Delete user
+        users = db.collection("users").where("email", "==", request.email).get()
+        for u_doc in users:
+            db.collection("users").document(u_doc.id).delete()
+            # Also find and delete member linked to this user_id
+            members = db.collection("members").where("user_id", "==", u_doc.id).get()
+            for m_doc in members:
+                db.collection("members").document(m_doc.id).delete()
+                
+    return None
+
