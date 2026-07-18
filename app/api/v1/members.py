@@ -287,7 +287,7 @@ async def remove_points_entry(
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_member(id: str, current_user: User = Depends(get_current_active_user)):
+async def delete_member(id: str, current_user: User = Depends(get_current_admin)):
     db = get_db()
     doc = db.collection("members").document(id).get()
     if not doc.exists:
@@ -295,8 +295,12 @@ async def delete_member(id: str, current_user: User = Depends(get_current_active
         
     member = Member(id=doc.id, **doc.to_dict())
     
-    if member.user_id != str(current_user.id) and current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
-        
+    # 1. Delete from members collection
     db.collection("members").document(member.id).delete()
+    
+    # 2. Delete from users collection if user_id is linked
+    if member.user_id:
+        db.collection("users").document(member.user_id).delete()
+        
     return None
+
