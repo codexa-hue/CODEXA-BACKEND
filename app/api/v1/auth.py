@@ -80,11 +80,12 @@ async def forgot_password(body: ForgotPasswordRequest):
 
     user = User(id=user_doc.id, **user_doc.to_dict())
 
-    # Invalidate any previous unused OTPs for this email
+    # Delete any previous OTPs for this email to save database space
     otps_ref = db.collection("password_reset_otps")
-    old_docs = otps_ref.where("email", "==", str(body.email)).where("used", "==", False).get()
+    old_docs = otps_ref.where("email", "==", str(body.email)).get()
     for doc in old_docs:
-        otps_ref.document(doc.id).update({"used": True})
+        otps_ref.document(doc.id).delete()
+
 
     # Generate and store new OTP
     otp = _generate_otp()
@@ -146,13 +147,13 @@ async def reset_password(body: VerifyOTPRequest):
 
     user = User(id=user_doc.id, **user_doc.to_dict())
 
-    # Update password in Firestore
     users_ref.document(user.id).update({"hashed_password": get_password_hash(body.new_password)})
 
-    # Mark OTP as used in Firestore
-    otps_ref.document(record.id).update({"used": True})
+    # Delete the used OTP from Firestore to save space
+    otps_ref.document(record.id).delete()
 
     return {"message": "Password updated successfully. You can now sign in."}
+
 
 
 from pydantic import BaseModel, Field
