@@ -21,11 +21,29 @@ async def read_challenges(
     offset: int = 0,
     current_user: User = Depends(get_current_active_user)
 ):
-    """Get list of all published weekly challenges. Accessible by active students."""
+    """Get list of published weekly challenges, filtered by the student's year."""
     db = get_db()
     docs = db.collection("challenges").get()
     challenges = [Challenge(id=doc.id, **doc.to_dict()) for doc in docs]
+    
+    if current_user.role != "admin":
+        member_docs = db.collection("members").where("user_id", "==", current_user.id).limit(1).get()
+        if member_docs:
+            member_data = member_docs[0].to_dict()
+            student_year = str(member_data.get("year", "")).lower().strip()
+            filtered = []
+            for c in challenges:
+                ty = str(c.target_year or "all").lower().strip()
+                if ty == "all" or ty == student_year:
+                    filtered.append(c)
+            challenges = filtered
+        else:
+            challenges = [c for c in challenges if str(c.target_year or "all").lower().strip() == "all"]
+
+    # Sort challenges by created_at descending (newest first)
+    challenges.sort(key=lambda x: x.created_at, reverse=True)
     return challenges[offset : offset + limit]
+
 
 
 @router.post("/{id}/submit", response_model=ChallengeSubmissionResponse, status_code=status.HTTP_201_CREATED)

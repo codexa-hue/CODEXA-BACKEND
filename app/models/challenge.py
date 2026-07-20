@@ -9,6 +9,7 @@ class Challenge(BaseModel):
     difficulty: str  # Easy | Medium | Hard
     link: Optional[str] = None
     points: int = 10
+    target_year: str = "all"
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class ChallengeCreate(BaseModel):
@@ -17,6 +18,7 @@ class ChallengeCreate(BaseModel):
     difficulty: str
     link: Optional[str] = None
     points: int = 10
+    target_year: str = "all"
 
 class ChallengeUpdate(BaseModel):
     title: Optional[str] = None
@@ -24,6 +26,7 @@ class ChallengeUpdate(BaseModel):
     difficulty: Optional[str] = None
     link: Optional[str] = None
     points: Optional[int] = None
+    target_year: Optional[str] = None
 
 class ChallengeResponse(BaseModel):
     id: str
@@ -32,10 +35,12 @@ class ChallengeResponse(BaseModel):
     difficulty: str
     link: Optional[str]
     points: int
+    target_year: str
     created_at: datetime
 
     class Config:
         from_attributes = True
+
 
 class ChallengeSubmission(BaseModel):
     id: Optional[str] = None
