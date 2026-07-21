@@ -106,6 +106,47 @@ async def read_members(limit: int = 100, offset: int = 0):
     return members
 
 
+@router.get("/me", response_model=MemberResponse)
+async def read_member_me(current_user: User = Depends(get_current_active_user)):
+    db = get_db()
+    if current_user.role == UserRole.ADMIN:
+        return Member(
+            id="admin-profile",
+            user_id=current_user.id,
+            name="Administrator",
+            email=current_user.email,
+            role="admin",
+            year="",
+            points=0,
+            badges=[],
+            points_history=[],
+            activity_log=[]
+        )
+
+    docs = db.collection("members").where("user_id", "==", current_user.id).limit(1).get()
+    if not docs:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member profile not found")
+
+    member = Member(id=docs[0].id, **docs[0].to_dict())
+
+    # Strip any badges whose IDs are no longer in the current badge set
+    valid_ids = {bd["id"] for bd in ALL_BADGES}
+    original_count = len(member.badges)
+    member.badges = [b for b in member.badges if b.id in valid_ids]
+
+    # Re-check and award any badges now deserved under the new rules
+    new_badges = check_and_award_badges(member)
+    member.badges.extend(new_badges)
+
+    if len(member.badges) != original_count or new_badges:
+        db.collection("members").document(member.id).set(member.model_dump(exclude={"id"}))
+
+    member.unique_id = current_user.unique_id
+    return member
+
+
+
+
 @router.get("/{id}", response_model=MemberResponse)
 async def read_member(id: str):
     db = get_db()
