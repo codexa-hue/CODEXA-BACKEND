@@ -110,10 +110,13 @@ async def read_members(limit: int = 100, offset: int = 0):
 async def read_member_me(current_user: User = Depends(get_current_active_user)):
     db = get_db()
     if current_user.role == UserRole.ADMIN:
+        user_doc = db.collection("users").document(current_user.id).get()
+        user_data = user_doc.to_dict() if user_doc.exists else {}
+        display_name = user_data.get("display_name") or "Administrator"
         return Member(
             id="admin-profile",
             user_id=current_user.id,
-            name="Administrator",
+            name=display_name,
             email=current_user.email,
             role="admin",
             year="",
