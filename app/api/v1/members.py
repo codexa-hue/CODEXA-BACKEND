@@ -8,6 +8,7 @@ from app.models.member import (
     ActivityEntry, Badge, AwardPointsRequest, PointAwardEntry,
 )
 from app.core.email import send_points_awarded
+from app.core.cloudinary import delete_cloudinary_file
 from app.core.database import get_db
 
 router = APIRouter()
@@ -216,6 +217,12 @@ async def update_member(id: str, member_in: MemberUpdate, current_user: User = D
     if current_user.role != UserRole.ADMIN:
         update_data.pop("points", None)
 
+    # Delete old avatar from Cloudinary if updated
+    old_avatar = member.avatar_url
+    new_avatar = update_data.get("avatar_url")
+    if new_avatar is not None and old_avatar and old_avatar != new_avatar:
+        delete_cloudinary_file(old_avatar)
+
     for field, value in update_data.items():
         setattr(member, field, value)
 
@@ -340,6 +347,8 @@ async def delete_member(id: str, current_user: User = Depends(get_current_admin)
     member = Member(id=doc.id, **doc.to_dict())
     
     # 1. Delete from members collection
+    if member.avatar_url:
+        delete_cloudinary_file(member.avatar_url)
     db.collection("members").document(member.id).delete()
     
     # 2. Delete from users collection if user_id is linked

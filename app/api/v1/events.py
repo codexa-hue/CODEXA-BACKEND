@@ -10,6 +10,8 @@ from app.api.v1.members import check_and_award_badges
 from datetime import datetime, timezone, timedelta, date as py_date
 from app.core.email import send_event_registration_confirmation, send_event_deleted_notification
 from app.core.database import get_db
+from app.core.cloudinary import delete_cloudinary_file
+
 
 router = APIRouter()
 
@@ -132,6 +134,10 @@ async def delete_expired_events(
     all_events = [Event(id=doc.id, **doc.to_dict()) for doc in docs]
     expired = [e for e in all_events if _is_expired(e)]
     for e in expired:
+        if e.image_url:
+            delete_cloudinary_file(e.image_url)
+        if e.video_url:
+            delete_cloudinary_file(e.video_url)
         db.collection("events").document(e.id).delete()
     return {"deleted": len(expired), "message": f"Removed {len(expired)} expired event(s)."}
 
@@ -165,6 +171,10 @@ async def delete_event(
     }
     
     # 2. Delete the event
+    if event.image_url:
+        delete_cloudinary_file(event.image_url)
+    if event.video_url:
+        delete_cloudinary_file(event.video_url)
     db.collection("events").document(id).delete()
     
     # 3. Dispatch emails in the background

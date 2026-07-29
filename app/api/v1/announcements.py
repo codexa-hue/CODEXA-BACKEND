@@ -6,6 +6,8 @@ from app.models.user import User
 from app.models.announcement import Announcement, AnnouncementCreate, AnnouncementUpdate, AnnouncementResponse
 from app.core.database import get_db
 from app.core.email import send_announcement_deleted_notification
+from app.core.cloudinary import delete_cloudinary_file
+
 
 router = APIRouter()
 
@@ -137,6 +139,10 @@ async def delete_expired_announcements(
     all_ann = [Announcement(id=doc.id, **doc.to_dict()) for doc in docs]
     expired = [a for a in all_ann if _is_expired(a)]
     for a in expired:
+        if a.image_url:
+            delete_cloudinary_file(a.image_url)
+        if a.video_url:
+            delete_cloudinary_file(a.video_url)
         db.collection("announcements").document(a.id).delete()
     return {"deleted": len(expired), "message": f"Removed {len(expired)} expired announcement(s)."}
 
@@ -182,5 +188,9 @@ async def delete_announcement(
             )
             
     # 2. Delete the announcement document
+    if announcement.image_url:
+        delete_cloudinary_file(announcement.image_url)
+    if announcement.video_url:
+        delete_cloudinary_file(announcement.video_url)
     db.collection("announcements").document(id).delete()
     return None
