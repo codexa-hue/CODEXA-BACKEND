@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     FIREBASE_CREDENTIALS_PATH: Optional[str] = "firebase-credentials.json"
     FIREBASE_STORAGE_BUCKET: Optional[str] = None
 
+    # Cloudinary Settings
+    CLOUDINARY_CLOUD_NAME: Optional[str] = None
+    CLOUDINARY_API_KEY: Optional[str] = None
+    CLOUDINARY_API_SECRET: Optional[str] = None
+
+
 
     # SMTP Email
     SMTP_HOST: str = "smtp.gmail.com"

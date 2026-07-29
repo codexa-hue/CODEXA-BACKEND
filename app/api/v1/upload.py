@@ -1,15 +1,24 @@
 import os
-import shutil
 import uuid
+import cloudinary
+import cloudinary.uploader
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status
 from app.api.deps import get_current_active_user
 from app.models.user import User
+from app.core.config import settings
 
 router = APIRouter()
 
-# Directory to save files
-UPLOAD_DIR = os.path.join(os.getcwd(), "uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# Configure Cloudinary
+if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY and settings.CLOUDINARY_API_SECRET:
+    cloudinary.config(
+        cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+        api_key=settings.CLOUDINARY_API_KEY,
+        api_secret=settings.CLOUDINARY_API_SECRET,
+        secure=True
+    )
+else:
+    print("[WARNING] Cloudinary credentials are not configured! Uploads will fail.")
 
 # Allowed file extensions
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
@@ -31,33 +40,32 @@ async def upload_file(
             detail="Invalid file format. Only images and videos are allowed."
         )
     
-    # Generate unique filename
-    unique_filename = f"{uuid.uuid4()}{file_ext}"
-    
-    # Save the file to Firebase Storage
+    if not settings.CLOUDINARY_CLOUD_NAME or not settings.CLOUDINARY_API_KEY or not settings.CLOUDINARY_API_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Upload failed: Cloudinary is not configured on the server. Please check environment settings."
+        )
+
+    # Save the file to Cloudinary
     try:
-        from firebase_admin import storage
-        bucket = storage.bucket()
-        blob = bucket.blob(f"uploads/{unique_filename}")
         file.file.seek(0)
-        blob.upload_from_file(file.file, content_type=file.content_type)
-        
-        try:
-            blob.make_public()
-            public_url = blob.public_url
-        except Exception:
-            # Fallback to standard Firebase Storage HTTP URL
-            public_url = f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}/o/uploads%2F{unique_filename}?alt=media"
+        upload_result = cloudinary.uploader.upload(
+            file.file,
+            resource_type="auto",
+            folder="codexa"
+        )
+        public_url = upload_result.get("secure_url")
+        filename = upload_result.get("public_id")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Could not upload file to storage: {str(e)}"
         )
         
-    # Return Firebase Storage URL
     return {
         "url": public_url,
-        "filename": unique_filename,
+        "filename": filename,
         "type": "video" if file_ext in ALLOWED_VIDEO_EXTENSIONS else "image"
     }
+
 
