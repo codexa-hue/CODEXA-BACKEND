@@ -6,7 +6,8 @@ from app.models.user import User
 from app.models.member import Member, PointAwardEntry, ActivityEntry
 from app.models.challenge import (
     Challenge, ChallengeCreate, ChallengeResponse,
-    ChallengeSubmission, ChallengeSubmissionResponse, SubmissionStatusRequest
+    ChallengeSubmission, ChallengeSubmissionResponse, SubmissionStatusRequest,
+    ChallengeSubmissionRequest
 )
 from app.api.v1.members import check_and_award_badges
 from app.core.database import get_db
@@ -49,8 +50,7 @@ async def read_challenges(
 @router.post("/{id}/submit", response_model=ChallengeSubmissionResponse, status_code=status.HTTP_201_CREATED)
 async def submit_challenge(
     id: str,
-    github_url: str,
-    comments: str = "",
+    req: ChallengeSubmissionRequest,
     current_user: User = Depends(get_current_active_user)
 ):
     """Submit a solution to a weekly challenge. Accessible by active students."""
@@ -68,14 +68,21 @@ async def submit_challenge(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Member profile not found")
     member = Member(id=member_docs[0].id, **member_docs[0].to_dict())
     
+    if not req.github_url and not req.submitted_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please provide a GitHub URL or write code in the editor to submit."
+        )
+
     # Create submission record
     sub = ChallengeSubmission(
         challenge_id=id,
         challenge_title=challenge.title,
         user_id=current_user.id,
         student_name=member.name,
-        github_url=github_url,
-        comments=comments,
+        github_url=req.github_url,
+        submitted_code=req.submitted_code,
+        comments=req.comments,
         status="Pending"
     )
     
@@ -229,6 +236,11 @@ async def update_submission_status(
     # Write back updates
     submission.status = req.status
     submission.feedback = req.feedback
+    
+    # Database space optimization: delete code string after admin processes the submission
+    if req.status in ("Approved", "Rejected"):
+        submission.submitted_code = None
+
     db.collection("challenge_submissions").document(submission.id).set(submission.model_dump(exclude={"id"}))
     db.collection("members").document(member.id).set(member.model_dump(exclude={"id"}))
     

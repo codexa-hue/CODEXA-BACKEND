@@ -48,7 +48,8 @@ class ChallengeSubmission(BaseModel):
     challenge_title: str
     user_id: str
     student_name: str
-    github_url: str
+    github_url: Optional[str] = None
+    submitted_code: Optional[str] = None
     comments: Optional[str] = None
     feedback: Optional[str] = None
     status: str = "Pending"  # Pending | Approved | Rejected
@@ -60,7 +61,8 @@ class ChallengeSubmissionResponse(BaseModel):
     challenge_title: str
     user_id: str
     student_name: str
-    github_url: str
+    github_url: Optional[str]
+    submitted_code: Optional[str] = None
     comments: Optional[str]
     feedback: Optional[str]
     status: str
@@ -72,4 +74,10 @@ class ChallengeSubmissionResponse(BaseModel):
 class SubmissionStatusRequest(BaseModel):
     status: str  # Approved | Rejected
     feedback: Optional[str] = None
+
+class ChallengeSubmissionRequest(BaseModel):
+    github_url: Optional[str] = None
+    submitted_code: Optional[str] = None
+    comments: Optional[str] = ""
+
 
