@@ -48,6 +48,7 @@ class ChallengeSubmission(BaseModel):
     challenge_title: str
     user_id: str
     student_name: str
+    student_year: Optional[str] = ""
     github_url: Optional[str] = None
     submitted_code: Optional[str] = None
     comments: Optional[str] = None
@@ -61,6 +62,7 @@ class ChallengeSubmissionResponse(BaseModel):
     challenge_title: str
     user_id: str
     student_name: str
+    student_year: Optional[str] = ""
     github_url: Optional[str]
     submitted_code: Optional[str] = None
     comments: Optional[str]

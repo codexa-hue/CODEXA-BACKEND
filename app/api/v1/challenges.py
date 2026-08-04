@@ -80,6 +80,7 @@ async def submit_challenge(
         challenge_title=challenge.title,
         user_id=current_user.id,
         student_name=member.name,
+        student_year=member.year,
         github_url=req.github_url,
         submitted_code=req.submitted_code,
         comments=req.comments,
@@ -148,7 +149,19 @@ async def read_challenge_submissions(
     """Get all submissions for a specific challenge. Restricted to Admins."""
     db = get_db()
     docs = db.collection("challenge_submissions").where("challenge_id", "==", id).get()
-    return [ChallengeSubmission(id=doc.id, **doc.to_dict()) for doc in docs]
+    submissions = []
+    
+    member_docs = db.collection("members").get()
+    member_year_map = {doc.to_dict().get("user_id"): doc.to_dict().get("year", "") for doc in member_docs}
+    
+    for doc in docs:
+        d = doc.to_dict()
+        sub = ChallengeSubmission(id=doc.id, **d)
+        if not sub.student_year and sub.user_id in member_year_map:
+            sub.student_year = member_year_map[sub.user_id]
+        submissions.append(sub)
+        
+    return submissions
 
 
 @router.get("/submissions/all", response_model=List[ChallengeSubmissionResponse])
@@ -158,7 +171,19 @@ async def read_all_submissions(
     """Get all submissions across all challenges. Restricted to Admins."""
     db = get_db()
     docs = db.collection("challenge_submissions").get()
-    return [ChallengeSubmission(id=doc.id, **doc.to_dict()) for doc in docs]
+    submissions = []
+    
+    member_docs = db.collection("members").get()
+    member_year_map = {doc.to_dict().get("user_id"): doc.to_dict().get("year", "") for doc in member_docs}
+    
+    for doc in docs:
+        d = doc.to_dict()
+        sub = ChallengeSubmission(id=doc.id, **d)
+        if not sub.student_year and sub.user_id in member_year_map:
+            sub.student_year = member_year_map[sub.user_id]
+        submissions.append(sub)
+        
+    return submissions
 
 
 @router.put("/submissions/{submission_id}/status", response_model=ChallengeSubmissionResponse)
